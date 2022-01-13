@@ -1,20 +1,10 @@
 import cv2 as cv
-import os
 import numpy as np
 import mss
 import sys
 import pydirectinput
-import time
 import threading
-
-def read_sample():
-    id = 0
-    for list in os.listdir('sample'):
-        img = cv.imread('sample/scr' + str(id) + '.jpg')
-        cv.imshow('img', img)
-        print('read: sample/scr' + str(id) + '.jpg')
-        id += 1
-        cv.waitKey(10)
+import tkinter as tk
 
 def screen_shot(left=0, top=0, width=2560, height=1440):
     stc = mss.mss()
@@ -29,16 +19,11 @@ def screen_shot(left=0, top=0, width=2560, height=1440):
     img = cv.cvtColor(img, cv.IMREAD_COLOR)
     return img
 
-def click(wait=0):
-    pydirectinput.mouseDown()
-    time.sleep(wait)
-    pydirectinput.mouseUp()
-
-def crop(img):
+def crop(img, width, height):
     # working border for 2560 x 1440
-    x, y, w, h = 1288, 493, 50, 575
-    frame = img[y:y + h, x:x + w]
-    # print(f'image: cropped to {w} x {h}')
+    if width == 2560 and height == 1440:
+        x, y, w, h = 1288, 493, 50, 575
+        frame = img[y:y + h, x:x + w]
     return frame
 
 def fish_detect(img, templ_dir):
@@ -94,60 +79,53 @@ def bar_pos(img):
 
     return top, bottom, frame_green
 
-def AI(frame, top, fish, bottom):
+def AI(frame=None, top=0, fish=0, bottom=0):
     if bottom > fish and fish > top:
-        dist_fish_top = fish - top
-        dist_fish_bottom = bottom - fish
         fish_percent = int(fish / 575 * 100)
         bar_percent = int((fish - top) / (bottom - top) * 100)
-        #if dist_fish_bottom > dist_fish_top:
         if fish_percent > bar_percent:
-            print('click')
             cv.putText(frame, "C", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
-
             pydirectinput.mouseDown()
-
             return frame
         else:
-            print('not click')
             cv.putText(frame, "NC", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
-
             pydirectinput.mouseUp()
-
             return frame
     elif top > fish:
-        print('click')
         cv.putText(frame, "C", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
-
         pydirectinput.mouseDown()
-
         return frame
     else:
-        print('not click')
         cv.putText(frame, "NC", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
-
         pydirectinput.mouseUp()
-
         return frame
 
 if __name__ == "__main__":
-    thr = threading.Thread(target=screen_shot)
-    thr.start()
+    thr1 = threading.Thread(target=screen_shot)
+    thr2 = threading.Thread(target=AI)
+    thr1.start()
+    thr2.start()
 
     text = "Looking for Fish..."
     print(text)
 
+    root = tk.Tk()
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
     while True:
-        img = screen_shot()
-        frame = crop(img)
+        img = screen_shot(0, 0, screen_width, screen_height)
+        frame = crop(img, screen_width, screen_height)
+
         # detect fish
-        fish_dir = "img/fish.jpg"
-        frame, fish_pos, fish = fish_detect(frame, fish_dir)
+        if screen_width == 2560 and screen_height == 1440:
+            fish_dir = "img/fish2K.jpg"
+            frame, fish_pos, fish = fish_detect(frame, fish_dir)
 
         if fish == 1:
-            # print(f'{src}: fish found')
-            text = "Fish Found!!!"
-            print(text)
+            if text != "Fish Found!!!":
+                text = "Fish Found!!!"
+                print(text)
 
             # get y pos at top and bottom of green bar
             top_pos, bottom_pos, frame_green = bar_pos(frame)
@@ -158,7 +136,6 @@ if __name__ == "__main__":
             frame = cv.circle(frame, (27, bottom_pos), 5, (255, 0, 0), -1)
 
             frame = AI(frame, top_pos, fish_pos, bottom_pos)
-            print('bottom_pos =', bottom_pos)
 
             #cv.imshow("main", frame)
             #cv.setWindowProperty("main", cv.WND_PROP_TOPMOST, 1)
