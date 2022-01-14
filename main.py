@@ -3,7 +3,6 @@ import numpy as np
 import mss
 import sys
 import pydirectinput
-import threading
 import tkinter as tk
 
 def screen_shot(left=0, top=0, width=2560, height=1440):
@@ -23,6 +22,9 @@ def crop(img, width, height):
     # working border for 2560 x 1440
     if width == 2560 and height == 1440:
         x, y, w, h = 1288, 493, 50, 575
+        frame = img[y:y + h, x:x + w]
+    elif width == 1920 and height == 1080:
+        x, y, w, h = 966, 382, 37, 422
         frame = img[y:y + h, x:x + w]
     return frame
 
@@ -81,7 +83,7 @@ def bar_pos(img):
 
 def AI(frame=None, top=0, fish=0, bottom=0):
     if bottom > fish and fish > top:
-        fish_percent = int(fish / 575 * 100)
+        fish_percent = int(fish / frame.shape[0] * 100)
         bar_percent = int((fish - top) / (bottom - top) * 100)
         if fish_percent > bar_percent:
             cv.putText(frame, "C", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
@@ -101,17 +103,13 @@ def AI(frame=None, top=0, fish=0, bottom=0):
         return frame
 
 if __name__ == "__main__":
-    thr1 = threading.Thread(target=screen_shot)
-    thr2 = threading.Thread(target=AI)
-    thr1.start()
-    thr2.start()
-
-    text = "Looking for Fish..."
-    print(text)
-
     root = tk.Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
+    print(f'===== Screen resolution is {screen_width} x {screen_height} =====')
+
+    text = "Looking for Fish..."
+    print(text)
 
     while True:
         img = screen_shot(0, 0, screen_width, screen_height)
@@ -120,11 +118,14 @@ if __name__ == "__main__":
         # detect fish
         if screen_width == 2560 and screen_height == 1440:
             fish_dir = "img/fish2K.jpg"
-            frame, fish_pos, fish = fish_detect(frame, fish_dir)
+        elif screen_width == 1920 and screen_height == 1080:
+            fish_dir = "img/fishFHD.jpg"
+
+        frame, fish_pos, fish = fish_detect(frame, fish_dir)
 
         if fish == 1:
-            if text != "Fish Found!!!":
-                text = "Fish Found!!!"
+            if text != "Fish Found: Running AI":
+                text = "Fish Found: Running AI"
                 print(text)
 
             # get y pos at top and bottom of green bar
@@ -146,7 +147,6 @@ if __name__ == "__main__":
 
         # Press q to quit programas
         if cv.waitKey(1) & 0xFF == ord("q"):
-            fisher.keep_fishing = False
             cv.destroyAllWindows()
             cv.waitKey(1)
             flag = False
