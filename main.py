@@ -4,6 +4,9 @@ import mss
 import sys
 import pydirectinput
 import tkinter as tk
+import time
+
+pydirectinput.PAUSE = 0.05
 
 def screen_shot(left=0, top=0, width=2560, height=1440):
     stc = mss.mss()
@@ -82,10 +85,19 @@ def bar_pos(img):
     return top, bottom, frame_green
 
 def AI(frame=None, top=0, fish=0, bottom=0):
-    if bottom > fish and fish > top:
-        fish_percent = int(fish / frame.shape[0] * 100)
-        bar_percent = int((fish - top) / (bottom - top) * 100)
-        if fish_percent > bar_percent:
+    try:
+        if bottom > fish and fish > top:
+            fish_percent = int(fish / frame.shape[0] * 100)
+            bar_percent = int((fish - top) / (bottom - top) * 100)
+            if fish_percent > bar_percent:
+                cv.putText(frame, "C", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
+                pydirectinput.mouseDown()
+                return frame
+            else:
+                cv.putText(frame, "NC", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
+                pydirectinput.mouseUp()
+                return frame
+        elif top > fish:
             cv.putText(frame, "C", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
             pydirectinput.mouseDown()
             return frame
@@ -93,25 +105,22 @@ def AI(frame=None, top=0, fish=0, bottom=0):
             cv.putText(frame, "NC", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
             pydirectinput.mouseUp()
             return frame
-    elif top > fish:
-        cv.putText(frame, "C", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
-        pydirectinput.mouseDown()
-        return frame
-    else:
-        cv.putText(frame, "NC", (10, fish), cv.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255))
-        pydirectinput.mouseUp()
-        return frame
+    except:
+        print('Found error, re-running...')
 
 if __name__ == "__main__":
     root = tk.Tk()
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
-    print(f'===== Screen resolution is {screen_width} x {screen_height} =====')
+    print('=====> This program only support 2560x1440 and 1920x1080 resolution')
+    print('=====> Tested on Google Chrome with bookmarks bar')
+    print(f'=====> Your resolution is {screen_width} x {screen_height}\n')
 
     text = "Looking for Fish..."
     print(text)
 
     while True:
+        #start_time = time.time()
         img = screen_shot(0, 0, screen_width, screen_height)
         frame = crop(img, screen_width, screen_height)
 
@@ -151,3 +160,5 @@ if __name__ == "__main__":
             cv.waitKey(1)
             flag = False
             sys.exit()
+
+        #print("FPS: ", 1.0 / (time.time() - start_time))
