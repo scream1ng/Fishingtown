@@ -10,7 +10,7 @@ Play as normal.
 
 when fishing gauge come up, just leave the script do the work.
 
-# How it works
+# How it work
 
 Using opencv to convert pic to HSV to find contour and matchTemplate to find fish icon.
 
