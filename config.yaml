@@ -1,0 +1,4 @@
+---
+  #delay between mouse or keyboard action (0.05 is pretty good)
+  delay: 0.05
+...

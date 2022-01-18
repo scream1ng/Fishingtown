@@ -4,9 +4,13 @@ import mss
 import sys
 import pydirectinput
 import tkinter as tk
-import time
+import yaml
 
-pydirectinput.PAUSE = 0.05
+f = open('config.yaml', 'r')
+conf = yaml.safe_load(f)
+f.close()
+
+pydirectinput.PAUSE = conf['delay']
 
 def screen_shot(left=0, top=0, width=2560, height=1440):
     stc = mss.mss()
@@ -120,39 +124,42 @@ if __name__ == "__main__":
     print(text)
 
     while True:
-        #start_time = time.time()
-        img = screen_shot(0, 0, screen_width, screen_height)
-        frame = crop(img, screen_width, screen_height)
+        try:
+            #start_time = time.time()
+            img = screen_shot(0, 0, screen_width, screen_height)
+            frame = crop(img, screen_width, screen_height)
 
-        # detect fish
-        if screen_width == 2560 and screen_height == 1440:
-            fish_dir = "img/fish2K.jpg"
-        elif screen_width == 1920 and screen_height == 1080:
-            fish_dir = "img/fishFHD.jpg"
+            # detect fish
+            if screen_width == 2560 and screen_height == 1440:
+                fish_dir = "img/fish2K.jpg"
+            elif screen_width == 1920 and screen_height == 1080:
+                fish_dir = "img/fishFHD.jpg"
 
-        frame, fish_pos, fish = fish_detect(frame, fish_dir)
+            frame, fish_pos, fish = fish_detect(frame, fish_dir)
 
-        if fish == 1:
-            if text != "Fish Found: Running AI":
-                text = "Fish Found: Running AI"
-                print(text)
+            if fish == 1:
+                if text != "Fish Found: Running AI":
+                    text = "Fish Found: Running AI"
+                    print(text)
 
-            # get y pos at top and bottom of green bar
-            top_pos, bottom_pos, frame_green = bar_pos(frame)
+                # get y pos at top and bottom of green bar
+                top_pos, bottom_pos, frame_green = bar_pos(frame)
 
-            # put dot on fish
-            frame = cv.circle(frame, (27, top_pos), 5, (255, 0, 0), -1)
-            frame = cv.circle(frame, (27, fish_pos), 5, (255, 0, 0), -1)
-            frame = cv.circle(frame, (27, bottom_pos), 5, (255, 0, 0), -1)
+                # put dot on fish
+                frame = cv.circle(frame, (27, top_pos), 5, (255, 0, 0), -1)
+                frame = cv.circle(frame, (27, fish_pos), 5, (255, 0, 0), -1)
+                frame = cv.circle(frame, (27, bottom_pos), 5, (255, 0, 0), -1)
 
-            frame = AI(frame, top_pos, fish_pos, bottom_pos)
+                frame = AI(frame, top_pos, fish_pos, bottom_pos)
 
-            #cv.imshow("main", frame)
-            #cv.setWindowProperty("main", cv.WND_PROP_TOPMOST, 1)
-        else:
-            if text != "Looking for Fish...":
-                text = "Looking for Fish..."
-                print(text)
+                #cv.imshow("main", frame)
+                #cv.setWindowProperty("main", cv.WND_PROP_TOPMOST, 1)
+            else:
+                if text != "Looking for Fish...":
+                    text = "Looking for Fish..."
+                    print(text)
+        except:
+            print('Found error, re-running...')
 
         # Press q to quit programas
         if cv.waitKey(1) & 0xFF == ord("q"):
